@@ -25,4 +25,4 @@ app.use('/servicos', servicosRoutes)
 
 app.use(errorMiddleware)
 
-export default appgit 
+export default app
