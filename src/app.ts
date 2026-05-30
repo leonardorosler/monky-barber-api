@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import { errorMiddleware } from './shared/middlewares/error.middleware'
 import authRoutes from './modules/auth/auth.routes'
 import barbeariaRoutes from './modules/barbearia/barbearia.routes'
+import barbeirosRoutes from './modules/barbeiros/barbeiros.routes'
 
 const app = express()
 
@@ -18,6 +19,7 @@ app.get('/health', (req, res) => {
 
 app.use('/auth', authRoutes)
 app.use('/barbearia', barbeariaRoutes)
+app.use('/barbeiros', barbeirosRoutes)
 
 app.use(errorMiddleware)
 
