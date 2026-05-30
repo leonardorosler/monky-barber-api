@@ -6,6 +6,7 @@ import { errorMiddleware } from './shared/middlewares/error.middleware'
 import authRoutes from './modules/auth/auth.routes'
 import barbeariaRoutes from './modules/barbearia/barbearia.routes'
 import barbeirosRoutes from './modules/barbeiros/barbeiros.routes'
+import servicosRoutes from './modules/servicos/servicos.routes'
 
 const app = express()
 
@@ -20,7 +21,8 @@ app.get('/health', (req, res) => {
 app.use('/auth', authRoutes)
 app.use('/barbearia', barbeariaRoutes)
 app.use('/barbeiros', barbeirosRoutes)
+app.use('/servicos', servicosRoutes)
 
 app.use(errorMiddleware)
 
-export default app
+export default appgit 
