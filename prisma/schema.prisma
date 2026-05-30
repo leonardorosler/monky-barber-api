@@ -1,0 +1,377 @@
+generator client {
+  provider = "prisma-client"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // url       = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// TENANT
+// ─────────────────────────────────────────────
+
+model Barbearia {
+  id          String  @id @default(cuid())
+  nome        String
+  slug        String  @unique
+  logo        String?
+  banner      String?
+  telefone    String?
+  instagram   String?
+  facebook    String?
+  endereco    String?
+
+  // Ex: { "seg": { "abre": "08:00", "fecha": "18:00" }, "dom": null }
+  horarioFuncionamento Json? @map("horario_funcionamento")
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  usuarios     Usuario[]
+  barbeiros    Barbeiro[]
+  clientes     Cliente[]
+  servicos     Servico[]
+  agendamentos Agendamento[]
+  planos       Plano[]
+  pagamentos   Pagamento[]
+
+  @@map("barbearias")
+}
+
+// ─────────────────────────────────────────────
+// USUÁRIO
+// ─────────────────────────────────────────────
+
+model Usuario {
+  id           String  @id @default(cuid())
+  barbeariaId  String  @map("barbearia_id")
+  nome         String
+  email        String
+  senha        String
+  papel        Papel   @default(CLIENTE)
+  ativo        Boolean @default(true)
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  barbearia         Barbearia           @relation(fields: [barbeariaId], references: [id])
+  barbeiro          Barbeiro?
+  cliente           Cliente?
+  tokensAtualizacao TokenAtualizacao[]
+  tokensRedefinicao TokenRedefinicaoSenha[]
+
+  @@unique([email, barbeariaId])
+  @@map("usuarios")
+}
+
+enum Papel {
+  ADMIN
+  BARBEIRO
+  CLIENTE
+}
+
+// ─────────────────────────────────────────────
+// BARBEIRO
+// ─────────────────────────────────────────────
+
+model Barbeiro {
+  id          String  @id @default(cuid())
+  usuarioId   String  @unique @map("usuario_id")
+  barbeariaId String  @map("barbearia_id")
+  foto        String?
+  bio         String?
+  ativo       Boolean @default(true)
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  usuario          Usuario           @relation(fields: [usuarioId], references: [id])
+  barbearia        Barbearia         @relation(fields: [barbeariaId], references: [id])
+  disponibilidades Disponibilidade[]
+  folgas           Folga[]
+  bloqueios        BloqueioHorario[]
+  agendamentos     Agendamento[]
+
+  @@map("barbeiros")
+}
+
+// ─────────────────────────────────────────────
+// CLIENTE
+// ─────────────────────────────────────────────
+
+model Cliente {
+  id          String  @id @default(cuid())
+  usuarioId   String  @unique @map("usuario_id")
+  barbeariaId String  @map("barbearia_id")
+  telefone    String?
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  usuario      Usuario      @relation(fields: [usuarioId], references: [id])
+  barbearia    Barbearia    @relation(fields: [barbeariaId], references: [id])
+  agendamentos Agendamento[]
+  assinaturas  Assinatura[]
+
+  @@map("clientes")
+}
+
+// ─────────────────────────────────────────────
+// SERVIÇO
+// ─────────────────────────────────────────────
+
+model Servico {
+  id          String  @id @default(cuid())
+  barbeariaId String  @map("barbearia_id")
+  nome        String
+  descricao   String?
+  duracao     Int     // em minutos
+  preco       Decimal @db.Decimal(10, 2)
+  ativo       Boolean @default(true)
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  barbearia      Barbearia      @relation(fields: [barbeariaId], references: [id])
+  agendamentos   Agendamento[]
+  planosServicos PlanoServico[]
+
+  @@map("servicos")
+}
+
+// ─────────────────────────────────────────────
+// DISPONIBILIDADE
+// ─────────────────────────────────────────────
+
+model Disponibilidade {
+  id          String @id @default(cuid())
+  barbeiroId  String @map("barbeiro_id")
+
+  // 0 = domingo ... 6 = sábado
+  diaSemana   Int    @map("dia_semana")
+  horaInicio  String @map("hora_inicio") // "08:00"
+  horaFim     String @map("hora_fim")    // "18:00"
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  barbeiro Barbeiro @relation(fields: [barbeiroId], references: [id])
+
+  @@unique([barbeiroId, diaSemana])
+  @@map("disponibilidades")
+}
+
+// ─────────────────────────────────────────────
+// FOLGA
+// ─────────────────────────────────────────────
+
+model Folga {
+  id         String    @id @default(cuid())
+  barbeiroId String    @map("barbeiro_id")
+  data       DateTime  // dia inteiro
+  motivo     String?
+
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  barbeiro Barbeiro @relation(fields: [barbeiroId], references: [id])
+
+  @@map("folgas")
+}
+
+// ─────────────────────────────────────────────
+// BLOQUEIO DE HORÁRIO
+// ─────────────────────────────────────────────
+
+model BloqueioHorario {
+  id         String   @id @default(cuid())
+  barbeiroId String   @map("barbeiro_id")
+  inicio     DateTime
+  fim        DateTime
+  motivo     String?
+
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  barbeiro Barbeiro @relation(fields: [barbeiroId], references: [id])
+
+  @@map("bloqueios_horario")
+}
+
+// ─────────────────────────────────────────────
+// AGENDAMENTO
+// ─────────────────────────────────────────────
+
+model Agendamento {
+  id          String            @id @default(cuid())
+  barbeariaId String            @map("barbearia_id")
+  clienteId   String            @map("cliente_id")
+  barbeiroId  String            @map("barbeiro_id")
+  servicoId   String            @map("servico_id")
+  inicio      DateTime
+  fim         DateTime
+  status      StatusAgendamento @default(PENDENTE)
+  observacao  String?
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  barbearia Barbearia @relation(fields: [barbeariaId], references: [id])
+  cliente   Cliente   @relation(fields: [clienteId], references: [id])
+  barbeiro  Barbeiro  @relation(fields: [barbeiroId], references: [id])
+  servico   Servico   @relation(fields: [servicoId], references: [id])
+  pagamento Pagamento?
+
+  @@map("agendamentos")
+}
+
+enum StatusAgendamento {
+  PENDENTE
+  CONFIRMADO
+  CONCLUIDO
+  CANCELADO
+  NAO_COMPARECEU
+
+  @@map("status_agendamento")
+}
+
+// ─────────────────────────────────────────────
+// PLANO
+// ─────────────────────────────────────────────
+
+model Plano {
+  id          String  @id @default(cuid())
+  barbeariaId String  @map("barbearia_id")
+  nome        String
+  descricao   String?
+  preco       Decimal @db.Decimal(10, 2)
+  ativo       Boolean @default(true)
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  barbearia      Barbearia      @relation(fields: [barbeariaId], references: [id])
+  planosServicos PlanoServico[]
+  assinaturas    Assinatura[]
+
+  @@map("planos")
+}
+
+// tabela de junção: quais serviços e quantidades cada plano inclui
+model PlanoServico {
+  id         String @id @default(cuid())
+  planoId    String @map("plano_id")
+  servicoId  String @map("servico_id")
+  quantidade Int    @default(1)
+
+  plano   Plano   @relation(fields: [planoId], references: [id])
+  servico Servico @relation(fields: [servicoId], references: [id])
+
+  @@unique([planoId, servicoId])
+  @@map("planos_servicos")
+}
+
+// ─────────────────────────────────────────────
+// ASSINATURA
+// ─────────────────────────────────────────────
+
+model Assinatura {
+  id               String           @id @default(cuid())
+  clienteId        String           @map("cliente_id")
+  planoId          String           @map("plano_id")
+  status           StatusAssinatura @default(ATIVA)
+  inicio           DateTime
+  fim              DateTime?
+  mpAssinaturaId   String?          @map("mp_assinatura_id") // ID no Mercado Pago
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  cliente    Cliente    @relation(fields: [clienteId], references: [id])
+  plano      Plano      @relation(fields: [planoId], references: [id])
+  pagamentos Pagamento[]
+
+  @@map("assinaturas")
+}
+
+enum StatusAssinatura {
+  ATIVA
+  CANCELADA
+  EXPIRADA
+  INADIMPLENTE
+
+  @@map("status_assinatura")
+}
+
+// ─────────────────────────────────────────────
+// PAGAMENTO
+// ─────────────────────────────────────────────
+
+model Pagamento {
+  id            String          @id @default(cuid())
+  barbeariaId   String          @map("barbearia_id")
+  agendamentoId String?         @unique @map("agendamento_id")
+  assinaturaId  String?         @map("assinatura_id")
+  valor         Decimal         @db.Decimal(10, 2)
+  metodo        MetodoPagamento
+  status        StatusPagamento @default(PENDENTE)
+  mpPagamentoId String?         @map("mp_pagamento_id") // ID no Mercado Pago
+
+  criadoEm    DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt     @map("atualizado_em")
+
+  barbearia    Barbearia    @relation(fields: [barbeariaId], references: [id])
+  agendamento  Agendamento? @relation(fields: [agendamentoId], references: [id])
+  assinatura   Assinatura?  @relation(fields: [assinaturaId], references: [id])
+
+  @@map("pagamentos")
+}
+
+enum MetodoPagamento {
+  PIX
+  CARTAO
+  BOLETO
+
+  @@map("metodo_pagamento")
+}
+
+enum StatusPagamento {
+  PENDENTE
+  APROVADO
+  RECUSADO
+  REEMBOLSADO
+  CANCELADO
+
+  @@map("status_pagamento")
+}
+
+// ─────────────────────────────────────────────
+// TOKENS
+// ─────────────────────────────────────────────
+
+model TokenAtualizacao {
+  id        String   @id @default(cuid())
+  usuarioId String   @map("usuario_id")
+  token     String   @unique
+  expiracao DateTime
+
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("tokens_atualizacao")
+}
+
+model TokenRedefinicaoSenha {
+  id        String   @id @default(cuid())
+  usuarioId String   @map("usuario_id")
+  token     String   @unique
+  expiracao DateTime
+  usado     Boolean  @default(false)
+
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("tokens_redefinicao_senha")
+}
