@@ -2,11 +2,12 @@ import { Router } from 'express'
 import { barbeariaController } from './barbearia.controller'
 import { tenantMiddleware } from '../../shared/middlewares/tenant.middleware'
 import { autenticar, autorizar } from '../auth/auth.middleware'
+import { adminSecretMiddleware } from '../../shared/middlewares/admin-secret.middleware'
 
 const barbeariaRoutes = Router()
 
-// pública — sem tenant, usada pelo frontend pra resolver o slug
-barbeariaRoutes.post('/', barbeariaController.criar)
+// protegida — apenas quem tem o ADMIN_SECRET pode criar uma barbearia
+barbeariaRoutes.post('/', adminSecretMiddleware, barbeariaController.criar)
 barbeariaRoutes.get('/slug/:slug', barbeariaController.buscarPorSlug)
 
 // autenticadas — exigem tenant + token
