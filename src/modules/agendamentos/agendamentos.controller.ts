@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { agendamentosService } from './agendamentos.service'
+import { pegarParam } from '../../shared/utils/req.utils'
 import {
   schemaCriarAgendamento,
   schemaAtualizarStatus,
@@ -65,7 +66,8 @@ export const agendamentosController = {
 
   async buscarPorId(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      // const { id } = req.params
+      const id = pegarParam(req, 'id')
       const agendamento = await agendamentosService.buscarPorId(id, req.barbeariaId!)
       res.json(agendamento)
     } catch (err) {
@@ -75,7 +77,8 @@ export const agendamentosController = {
 
   async atualizarStatus(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      // const { id } = req.params
+      const id = pegarParam(req, 'id')
       const dados = schemaAtualizarStatus.parse(req.body)
       const agendamento = await agendamentosService.atualizarStatus(
         id,

@@ -17,7 +17,7 @@ export const barbeariaController = {
   // rota pública — frontend busca a barbearia pelo slug pra montar a landing page
   async buscarPorSlug(req: Request, res: Response, next: NextFunction) {
     try {
-      const { slug } = req.params
+      const slug = req.params.slug as string
       const barbearia = await barbeariaService.buscarPorSlug(slug)
       res.json(barbearia)
     } catch (err) {

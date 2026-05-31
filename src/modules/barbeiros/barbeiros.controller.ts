@@ -24,7 +24,7 @@ export const barbeirosController = {
 
   async buscarPorId(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      const id = req.params.id as string
       const barbeiro = await barbeirosService.buscarPorId(id, req.barbeariaId!)
       res.json(barbeiro)
     } catch (err) {
@@ -34,7 +34,7 @@ export const barbeirosController = {
 
   async atualizar(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      const id = req.params.id as string
       const dados = schemaAtualizarBarbeiro.parse(req.body)
       const barbeiro = await barbeirosService.atualizar(id, req.barbeariaId!, dados)
       res.json(barbeiro)

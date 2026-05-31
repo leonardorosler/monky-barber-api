@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { planosService } from './planos.service'
 import { schemaCriarPlano, schemaAtualizarPlano } from './planos.validator'
+import { pegarParam } from '../../shared/utils/req.utils'
 
 export const planosController = {
   async criar(req: Request, res: Response, next: NextFunction) {
@@ -25,7 +26,7 @@ export const planosController = {
 
   async buscarPorId(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      const id = pegarParam(req, 'id')
       const plano = await planosService.buscarPorId(id, req.barbeariaId!)
       res.json(plano)
     } catch (err) {
@@ -35,7 +36,7 @@ export const planosController = {
 
   async atualizar(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      const id = pegarParam(req, 'id')
       const dados = schemaAtualizarPlano.parse(req.body)
       const plano = await planosService.atualizar(id, req.barbeariaId!, dados)
       res.json(plano)

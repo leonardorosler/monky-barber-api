@@ -6,7 +6,7 @@ export const schemaCriarAssinatura = z.object({
 
 export const schemaAtualizarStatusAssinatura = z.object({
   status: z.enum(['ATIVA', 'CANCELADA', 'EXPIRADA', 'INADIMPLENTE'], {
-    errorMap: () => ({ message: 'Status inválido.' }),
+    error: 'Status inválido.',
   }),
 })
 

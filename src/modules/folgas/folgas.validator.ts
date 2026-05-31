@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const schemaCriarFolga = z.object({
-  data: z.coerce.date({ invalid_type_error: 'Data inválida.' }),
+  data: z.coerce.date({ error: 'Data inválida.' }),
   motivo: z.string().optional(),
 })
 

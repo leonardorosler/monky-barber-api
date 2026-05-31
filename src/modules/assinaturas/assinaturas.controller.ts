@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { assinaturasService } from './assinaturas.service'
 import { schemaCriarAssinatura, schemaAtualizarStatusAssinatura } from './assinaturas.validator'
+import { pegarParam } from '../../shared/utils/req.utils'
 
 export const assinaturasController = {
   async criar(req: Request, res: Response, next: NextFunction) {
@@ -37,7 +38,7 @@ export const assinaturasController = {
 
   async buscarPorId(req: Request, res: Response, next: NextFunction) {
     try {
-      const assinatura = await assinaturasService.buscarPorId(req.params.id)
+      const assinatura = await assinaturasService.buscarPorId(pegarParam(req, 'id'))
       res.json(assinatura)
     } catch (err) {
       next(err)
@@ -47,7 +48,7 @@ export const assinaturasController = {
   async cancelar(req: Request, res: Response, next: NextFunction) {
     try {
       const assinatura = await assinaturasService.cancelar(
-        req.params.id,
+        pegarParam(req, 'id'),
         req.usuario!.id,
         req.usuario!.papel
       )
@@ -60,7 +61,7 @@ export const assinaturasController = {
   async atualizarStatus(req: Request, res: Response, next: NextFunction) {
     try {
       const dados = schemaAtualizarStatusAssinatura.parse(req.body)
-      const assinatura = await assinaturasService.atualizarStatus(req.params.id, dados)
+      const assinatura = await assinaturasService.atualizarStatus(pegarParam(req, 'id'), dados)
       res.json(assinatura)
     } catch (err) {
       next(err)

@@ -4,11 +4,11 @@ export const schemaCriarServico = z.object({
   nome: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres.'),
   descricao: z.string().optional(),
   duracao: z
-    .number({ invalid_type_error: 'Duração deve ser um número.' })
+    .number({ error: 'Duração deve ser um número.' })
     .int('Duração deve ser um número inteiro.')
     .min(5, 'Duração mínima de 5 minutos.'),
   preco: z
-    .number({ invalid_type_error: 'Preço deve ser um número.' })
+    .number({ error: 'Preço deve ser um número.' })
     .min(0, 'Preço não pode ser negativo.'),
 })
 

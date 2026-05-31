@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { clientesService } from './clientes.service'
 import { schemaAtualizarCliente } from './clientes.validator'
+import { pegarParam } from '../../shared/utils/req.utils'
 
 export const clientesController = {
   async listar(req: Request, res: Response, next: NextFunction) {
@@ -14,7 +15,7 @@ export const clientesController = {
 
   async buscarPorId(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      const id = pegarParam(req, 'id')
       const cliente = await clientesService.buscarPorId(id, req.barbeariaId!)
       res.json(cliente)
     } catch (err) {
@@ -35,7 +36,7 @@ export const clientesController = {
   // admin atualiza dados de um cliente
   async atualizar(req: Request, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params
+      const id = pegarParam(req, 'id')
       const dados = schemaAtualizarCliente.parse(req.body)
       const cliente = await clientesService.atualizar(id, req.barbeariaId!, dados)
       res.json(cliente)
