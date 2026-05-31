@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { ZodError } from 'zod'
 
 export class ErroAplicacao extends Error {
   constructor(
@@ -16,6 +17,17 @@ export function errorMiddleware(
   res: Response,
   next: NextFunction
 ): void {
+  if (err instanceof ZodError) {
+    res.status(400).json({
+      mensagem: 'Dados inválidos.',
+      erros: err.issues.map((e) => ({
+        campo: e.path.join('.'),
+        mensagem: e.message,
+      })),
+    })
+    return
+  }
+
   if (err instanceof ErroAplicacao) {
     res.status(err.statusCode).json({ mensagem: err.mensagem })
     return
