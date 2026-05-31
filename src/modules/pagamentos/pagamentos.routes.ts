@@ -3,6 +3,7 @@ import prisma from '../../shared/lib/prisma'
 import { tenantMiddleware } from '../../shared/middlewares/tenant.middleware'
 import { autenticar, autorizar } from '../auth/auth.middleware'
 import { assinaturasRepository } from '../assinaturas/assinaturas.repository'
+import { pegarParam } from '../../shared/utils/req.utils'
 
 // ─────────────────────────────────────────────
 // HELPERS MERCADO PAGO
@@ -59,7 +60,7 @@ pagamentosRoutes.post(
   autorizar('CLIENTE'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { agendamentoId } = req.params
+      const agendamentoId = pegarParam(req, 'agendamentoId')
 
       const agendamento = await prisma.agendamento.findFirst({
         where: { id: agendamentoId, barbeariaId: req.barbeariaId! },
