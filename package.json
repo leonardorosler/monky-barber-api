@@ -4,6 +4,9 @@
   "description": "API da plataforma Monky Barber",
   "main": "dist/server.js",
   "type": "module",
+  "engines": {
+  "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsup src/server.ts --format cjs --out-dir dist",
