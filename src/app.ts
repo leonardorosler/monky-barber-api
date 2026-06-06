@@ -20,7 +20,25 @@ import dashboardRoutes from './modules/dashboard/dashboard.routes'
 const app = express()
 
 app.use(helmet())
-app.use(cors())
+
+// CORS — aceita múltiplas origens separadas por vírgula no env
+// ex: FRONTEND_URL=https://barbearia-a.vercel.app,https://barbearia-b.vercel.app
+const origensPermitidas = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((url) => url.trim())
+  .filter(Boolean)
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // permite requisições sem origin (Postman, Railway health check, etc)
+      if (!origin) return callback(null, true)
+      if (origensPermitidas.includes(origin)) return callback(null, true)
+      callback(new Error(`CORS: origem não permitida — ${origin}`))
+    },
+    credentials: true,
+  })
+)
 
 // webhook precisa do raw body — deve vir antes do express.json()
 app.use('/pagamentos/webhook', express.raw({ type: 'application/json' }))
