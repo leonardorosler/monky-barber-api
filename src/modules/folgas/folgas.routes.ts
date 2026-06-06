@@ -13,3 +13,4 @@ folgasRoutes.post('/:barbeiroId', autorizar('ADMIN', 'BARBEIRO'), folgasControll
 folgasRoutes.delete('/:barbeiroId/:id', autorizar('ADMIN', 'BARBEIRO'), folgasController.deletar)
 
 export default folgasRoutes
+    

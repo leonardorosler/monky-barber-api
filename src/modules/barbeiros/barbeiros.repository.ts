@@ -52,9 +52,17 @@ export const barbeirosRepository = {
     })
   },
 
-  async buscarPorUsuarioId(usuarioId: string) {
-    return prisma.barbeiro.findUnique({
-      where: { usuarioId },
+  async buscarPorUsuarioId(usuarioId: string, barbeariaId?: string) {
+    return prisma.barbeiro.findFirst({
+      where: {
+        usuarioId,
+        ...(barbeariaId ? { barbeariaId } : {}),
+      },
+      include: {
+        usuario: {
+          select: { id: true, nome: true, email: true, ativo: true },
+        },
+      },
     })
   },
 

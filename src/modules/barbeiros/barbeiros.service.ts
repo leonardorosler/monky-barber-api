@@ -43,8 +43,28 @@ export const barbeirosService = {
     return barbeiro
   },
 
+  async buscarMeuPerfil(usuarioId: string, barbeariaId: string) {
+    const barbeiro = await barbeirosRepository.buscarPorUsuarioId(usuarioId, barbeariaId)
+
+    if (!barbeiro) {
+      throw new ErroAplicacao('Barbeiro não encontrado.', 404)
+    }
+
+    return barbeiro
+  },
+
   async atualizar(id: string, barbeariaId: string, dados: AtualizarBarbeiroDTO) {
     await barbeirosService.buscarPorId(id, barbeariaId)
     return barbeirosRepository.atualizar(id, dados)
+  },
+
+  async atualizarMeuPerfil(usuarioId: string, barbeariaId: string, dados: AtualizarBarbeiroDTO) {
+    const barbeiro = await barbeirosRepository.buscarPorUsuarioId(usuarioId, barbeariaId)
+
+    if (!barbeiro) {
+      throw new ErroAplicacao('Barbeiro não encontrado.', 404)
+    }
+
+    return barbeirosRepository.atualizar(barbeiro.id, dados)
   },
 }

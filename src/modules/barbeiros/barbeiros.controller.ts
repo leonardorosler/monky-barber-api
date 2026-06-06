@@ -32,11 +32,30 @@ export const barbeirosController = {
     }
   },
 
+  async me(req: Request, res: Response, next: NextFunction) {
+    try {
+      const barbeiro = await barbeirosService.buscarMeuPerfil(req.usuario!.id, req.barbeariaId!)
+      res.json(barbeiro)
+    } catch (err) {
+      next(err)
+    }
+  },
+
   async atualizar(req: Request, res: Response, next: NextFunction) {
     try {
       const id = req.params.id as string
       const dados = schemaAtualizarBarbeiro.parse(req.body)
       const barbeiro = await barbeirosService.atualizar(id, req.barbeariaId!, dados)
+      res.json(barbeiro)
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  async atualizarMe(req: Request, res: Response, next: NextFunction) {
+    try {
+      const dados = schemaAtualizarBarbeiro.parse(req.body)
+      const barbeiro = await barbeirosService.atualizarMeuPerfil(req.usuario!.id, req.barbeariaId!, dados)
       res.json(barbeiro)
     } catch (err) {
       next(err)
