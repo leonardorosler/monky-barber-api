@@ -14,6 +14,7 @@ assinaturasRoutes.get('/minhas', autorizar('CLIENTE'), assinaturasController.lis
 assinaturasRoutes.patch('/:id/cancelar', assinaturasController.cancelar)
 
 // admin
+assinaturasRoutes.post('/atribuir', autorizar('ADMIN'), assinaturasController.atribuir)
 assinaturasRoutes.get('/', autorizar('ADMIN'), assinaturasController.listarPorBarbearia)
 assinaturasRoutes.get('/:id', autorizar('ADMIN'), assinaturasController.buscarPorId)
 assinaturasRoutes.patch('/:id/status', autorizar('ADMIN'), assinaturasController.atualizarStatus)

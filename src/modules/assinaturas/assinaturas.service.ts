@@ -2,7 +2,7 @@ import { assinaturasRepository } from './assinaturas.repository'
 import { planosRepository } from '../planos/planos.repository'
 import { clientesRepository } from '../clientes/clientes.repository'
 import { ErroAplicacao } from '../../shared/middlewares/error.middleware'
-import type { CriarAssinaturaDTO, AtualizarStatusAssinaturaDTO } from './assinaturas.validator'
+import type { CriarAssinaturaDTO, AtribuirAssinaturaDTO, AtualizarStatusAssinaturaDTO } from './assinaturas.validator'
 
 export const assinaturasService = {
   async criar(barbeariaId: string, usuarioId: string, dados: CriarAssinaturaDTO) {
@@ -25,6 +25,36 @@ export const assinaturasService = {
     )
     if (jaAssinou) {
       throw new ErroAplicacao('Você já possui uma assinatura ativa neste plano.', 409)
+    }
+
+    return assinaturasRepository.criar({
+      clienteId: cliente.id,
+      planoId: dados.planoId,
+      inicio: new Date(),
+    })
+  },
+
+  async atribuir(barbeariaId: string, dados: AtribuirAssinaturaDTO) {
+    const cliente = await clientesRepository.buscarPorId(dados.clienteId, barbeariaId)
+    if (!cliente) {
+      throw new ErroAplicacao('Cliente não encontrado.', 404)
+    }
+
+    const plano = await planosRepository.buscarPorId(dados.planoId, barbeariaId)
+    if (!plano) {
+      throw new ErroAplicacao('Plano não encontrado.', 404)
+    }
+    if (!plano.ativo) {
+      throw new ErroAplicacao('Plano inativo.', 409)
+    }
+
+    const assinaturaAtiva = await assinaturasRepository.assinaturaAtivaPorCliente(cliente.id)
+    if (assinaturaAtiva?.planoId === plano.id) {
+      return assinaturasRepository.buscarPorId(assinaturaAtiva.id)
+    }
+
+    if (assinaturaAtiva) {
+      await assinaturasRepository.atualizarStatus(assinaturaAtiva.id, 'CANCELADA')
     }
 
     return assinaturasRepository.criar({

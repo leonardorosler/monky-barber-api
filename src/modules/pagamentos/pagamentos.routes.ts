@@ -3,7 +3,6 @@ import prisma from '../../shared/lib/prisma'
 import { tenantMiddleware } from '../../shared/middlewares/tenant.middleware'
 import { autenticar, autorizar } from '../auth/auth.middleware'
 import { assinaturasRepository } from '../assinaturas/assinaturas.repository'
-import { pegarParam } from '../../shared/utils/req.utils'
 
 // ─────────────────────────────────────────────
 // HELPERS MERCADO PAGO
@@ -60,7 +59,7 @@ pagamentosRoutes.post(
   autorizar('CLIENTE'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const agendamentoId = pegarParam(req, 'agendamentoId')
+      const agendamentoId = req.params.agendamentoId as string
 
       const agendamento = await prisma.agendamento.findFirst({
         where: { id: agendamentoId, barbeariaId: req.barbeariaId! },
@@ -82,12 +81,65 @@ pagamentosRoutes.post(
         pagadorEmail: agendamento.cliente.usuario.email,
       })
 
-      // cria registro de pagamento pendente
       await prisma.pagamento.create({
         data: {
           barbeariaId: req.barbeariaId!,
           agendamentoId: agendamento.id,
           valor: agendamento.servico.preco,
+          metodo: 'PIX',
+          status: 'PENDENTE',
+          mpPagamentoId: preferencia.id,
+        },
+      })
+
+      res.json({ linkPagamento: preferencia.init_point, preferenciaId: preferencia.id })
+    } catch (err) {
+      next(err)
+    }
+  }
+)
+
+// gera link de pagamento para assinatura
+pagamentosRoutes.post(
+  '/assinatura/:assinaturaId',
+  tenantMiddleware,
+  autenticar,
+  autorizar('CLIENTE'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const assinaturaId = req.params.assinaturaId as string
+
+      const assinatura = await prisma.assinatura.findFirst({
+        where: { id: assinaturaId },
+        include: {
+          plano: true,
+          cliente: { include: { usuario: { select: { email: true, id: true } } } },
+        },
+      })
+
+      if (!assinatura) {
+        res.status(404).json({ mensagem: 'Assinatura não encontrada.' })
+        return
+      }
+
+      // valida que o cliente autenticado é o dono da assinatura
+      if (assinatura.cliente.usuarioId !== req.usuario!.id) {
+        res.status(403).json({ mensagem: 'Acesso negado.' })
+        return
+      }
+
+      const preferencia = await criarPreferencia({
+        titulo: `Assinatura — ${assinatura.plano.nome}`,
+        valor: Number(assinatura.plano.preco),
+        referencia: assinatura.id,
+        pagadorEmail: assinatura.cliente.usuario.email,
+      })
+
+      await prisma.pagamento.create({
+        data: {
+          barbeariaId: req.barbeariaId!,
+          assinaturaId: assinatura.id,
+          valor: assinatura.plano.preco,
           metodo: 'PIX',
           status: 'PENDENTE',
           mpPagamentoId: preferencia.id,
@@ -140,14 +192,13 @@ pagamentosRoutes.post('/webhook', async (req: Request, res: Response) => {
     if (type === 'payment') {
       const mpPagamentoId = data.id
 
-      // busca detalhes do pagamento no MP
       const mpResponse = await fetch(`${MP_API}/v1/payments/${mpPagamentoId}`, {
         headers: { Authorization: `Bearer ${MP_ACCESS_TOKEN}` },
       })
       const mpPagamento = await mpResponse.json()
 
-      const status = mpPagamento.status // approved | rejected | cancelled | refunded
-      const referencia = mpPagamento.external_reference // id do agendamento
+      const status = mpPagamento.status
+      const referencia = mpPagamento.external_reference
 
       const statusMap: Record<string, string> = {
         approved: 'APROVADO',
@@ -162,22 +213,40 @@ pagamentosRoutes.post('/webhook', async (req: Request, res: Response) => {
         return
       }
 
-      // atualiza pagamento pelo external_reference (agendamentoId)
-      const pagamento = await prisma.pagamento.findFirst({
+      // tenta encontrar pagamento por agendamento
+      const pagamentoPorAgendamento = await prisma.pagamento.findFirst({
         where: { agendamentoId: referencia },
       })
 
-      if (pagamento) {
+      if (pagamentoPorAgendamento) {
         await prisma.pagamento.update({
-          where: { id: pagamento.id },
+          where: { id: pagamentoPorAgendamento.id },
           data: { status: novoStatus as any, mpPagamentoId: String(mpPagamentoId) },
         })
 
-        // se aprovado, confirma o agendamento
         if (novoStatus === 'APROVADO') {
           await prisma.agendamento.update({
             where: { id: referencia },
             data: { status: 'CONFIRMADO' },
+          })
+        }
+      }
+
+      // tenta encontrar pagamento por assinatura
+      const pagamentoPorAssinatura = await prisma.pagamento.findFirst({
+        where: { assinaturaId: referencia },
+      })
+
+      if (pagamentoPorAssinatura) {
+        await prisma.pagamento.update({
+          where: { id: pagamentoPorAssinatura.id },
+          data: { status: novoStatus as any, mpPagamentoId: String(mpPagamentoId) },
+        })
+
+        if (novoStatus === 'APROVADO') {
+          await prisma.assinatura.update({
+            where: { id: referencia },
+            data: { status: 'ATIVA' },
           })
         }
       }
@@ -213,7 +282,7 @@ pagamentosRoutes.post('/webhook', async (req: Request, res: Response) => {
     res.sendStatus(200)
   } catch (err) {
     console.error('[Webhook MP]', err)
-    res.sendStatus(200) // sempre 200 pro MP não reenviar
+    res.sendStatus(200)
   }
 })
 

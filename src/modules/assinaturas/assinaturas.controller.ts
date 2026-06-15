@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import { assinaturasService } from './assinaturas.service'
-import { schemaCriarAssinatura, schemaAtualizarStatusAssinatura } from './assinaturas.validator'
+import { schemaCriarAssinatura, schemaAtribuirAssinatura, schemaAtualizarStatusAssinatura } from './assinaturas.validator'
 import { pegarParam } from '../../shared/utils/req.utils'
 
 export const assinaturasController = {
@@ -31,6 +31,16 @@ export const assinaturasController = {
     try {
       const assinaturas = await assinaturasService.listarPorCliente(req.usuario!.id)
       res.json(assinaturas)
+    } catch (err) {
+      next(err)
+    }
+  },
+
+  async atribuir(req: Request, res: Response, next: NextFunction) {
+    try {
+      const dados = schemaAtribuirAssinatura.parse(req.body)
+      const assinatura = await assinaturasService.atribuir(req.barbeariaId!, dados)
+      res.status(201).json(assinatura)
     } catch (err) {
       next(err)
     }

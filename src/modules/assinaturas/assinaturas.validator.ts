@@ -4,6 +4,11 @@ export const schemaCriarAssinatura = z.object({
   planoId: z.string().min(1, 'Plano obrigatório.'),
 })
 
+export const schemaAtribuirAssinatura = z.object({
+  clienteId: z.string().min(1, 'Cliente obrigatório.'),
+  planoId: z.string().min(1, 'Plano obrigatório.'),
+})
+
 export const schemaAtualizarStatusAssinatura = z.object({
   status: z.enum(['ATIVA', 'CANCELADA', 'EXPIRADA', 'INADIMPLENTE'], {
     error: 'Status inválido.',
@@ -11,4 +16,5 @@ export const schemaAtualizarStatusAssinatura = z.object({
 })
 
 export type CriarAssinaturaDTO = z.infer<typeof schemaCriarAssinatura>
+export type AtribuirAssinaturaDTO = z.infer<typeof schemaAtribuirAssinatura>
 export type AtualizarStatusAssinaturaDTO = z.infer<typeof schemaAtualizarStatusAssinatura>

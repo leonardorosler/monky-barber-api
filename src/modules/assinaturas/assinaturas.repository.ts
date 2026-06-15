@@ -68,4 +68,11 @@ export const assinaturasRepository = {
       where: { clienteId, planoId, status: 'ATIVA' },
     })
   },
+
+  async assinaturaAtivaPorCliente(clienteId: string) {
+    return prisma.assinatura.findFirst({
+      where: { clienteId, status: 'ATIVA' },
+      orderBy: { criadoEm: 'desc' },
+    })
+  },
 }
