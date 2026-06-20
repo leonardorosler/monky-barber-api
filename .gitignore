@@ -2,5 +2,5 @@
 node_modules
 dist
 /prisma/generated/
-
+CONTEXTO_FRONTEND_REACT.md
 

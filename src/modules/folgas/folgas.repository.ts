@@ -1,5 +1,6 @@
 import prisma from '../../shared/lib/prisma'
 import type { CriarFolgaDTO } from './folgas.validator'
+import { businessDayRange } from '../../shared/utils/date.utils'
 
 export const folgasRepository = {
   async criar(barbeiroId: string, dados: CriarFolgaDTO) {
@@ -9,10 +10,12 @@ export const folgasRepository = {
   },
 
   async listar(barbeiroId: string) {
+    const hoje = businessDayRange(new Date())
+
     return prisma.folga.findMany({
       where: {
         barbeiroId,
-        data: { gte: new Date() }, // apenas folgas futuras
+        data: { gte: hoje.inicio },
       },
       orderBy: { data: 'asc' },
     })
@@ -29,10 +32,7 @@ export const folgasRepository = {
   },
 
   async existeNaData(barbeiroId: string, data: Date) {
-    const inicio = new Date(data)
-    inicio.setHours(0, 0, 0, 0)
-    const fim = new Date(data)
-    fim.setHours(23, 59, 59, 999)
+    const { inicio, fim } = businessDayRange(data)
 
     const folga = await prisma.folga.findFirst({
       where: {

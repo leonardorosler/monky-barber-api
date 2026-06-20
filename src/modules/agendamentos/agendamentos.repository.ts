@@ -1,4 +1,5 @@
 import prisma from '../../shared/lib/prisma'
+import { businessDayRange } from '../../shared/utils/date.utils'
 
 export const agendamentosRepository = {
   async criar(dados: {
@@ -20,14 +21,16 @@ export const agendamentosRepository = {
   },
 
   async listarPorBarbearia(barbeariaId: string, filtros?: { data?: Date; status?: string }) {
+    const intervalo = filtros?.data ? businessDayRange(filtros.data) : undefined
+
     return prisma.agendamento.findMany({
       where: {
         barbeariaId,
         ...(filtros?.status && { status: filtros.status as any }),
         ...(filtros?.data && {
           inicio: {
-            gte: new Date(new Date(filtros.data).setHours(0, 0, 0, 0)),
-            lte: new Date(new Date(filtros.data).setHours(23, 59, 59, 999)),
+            gte: intervalo!.inicio,
+            lte: intervalo!.fim,
           },
         }),
       },
@@ -52,14 +55,16 @@ export const agendamentosRepository = {
   },
 
   async listarPorBarbeiro(barbeiroId: string, data?: Date) {
+    const intervalo = data ? businessDayRange(data) : undefined
+
     return prisma.agendamento.findMany({
       where: {
         barbeiroId,
         status: { notIn: ['CANCELADO', 'NAO_COMPARECEU'] },
         ...(data && {
           inicio: {
-            gte: new Date(new Date(data).setHours(0, 0, 0, 0)),
-            lte: new Date(new Date(data).setHours(23, 59, 59, 999)),
+            gte: intervalo!.inicio,
+            lte: intervalo!.fim,
           },
         }),
       },

@@ -1,10 +1,9 @@
 import prisma from '../../shared/lib/prisma'
+import { businessDayRange, businessMonthRange } from '../../shared/utils/date.utils'
 
 export const dashboardRepository = {
   async agendamentosHoje(barbeariaId: string) {
-    const hoje = new Date()
-    const inicio = new Date(hoje.setHours(0, 0, 0, 0))
-    const fim = new Date(hoje.setHours(23, 59, 59, 999))
+    const { inicio, fim } = businessDayRange(new Date())
 
     return prisma.agendamento.count({
       where: {
@@ -16,9 +15,7 @@ export const dashboardRepository = {
   },
 
   async agendamentosMes(barbeariaId: string) {
-    const hoje = new Date()
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59)
+    const { inicio, fim } = businessMonthRange(new Date())
 
     return prisma.agendamento.count({
       where: {
@@ -48,9 +45,7 @@ export const dashboardRepository = {
   },
 
   async barbeirosRanking(barbeariaId: string) {
-    const hoje = new Date()
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59)
+    const { inicio, fim } = businessMonthRange(new Date())
 
     const resultado = await prisma.agendamento.groupBy({
       by: ['barbeiroId'],
@@ -78,9 +73,7 @@ export const dashboardRepository = {
   },
 
   async servicosRanking(barbeariaId: string) {
-    const hoje = new Date()
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59)
+    const { inicio, fim } = businessMonthRange(new Date())
 
     const resultado = await prisma.agendamento.groupBy({
       by: ['servicoId'],
@@ -107,9 +100,7 @@ export const dashboardRepository = {
   },
 
   async receitaMes(barbeariaId: string) {
-    const hoje = new Date()
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0, 23, 59, 59)
+    const { inicio, fim } = businessMonthRange(new Date())
 
     const resultado = await prisma.pagamento.aggregate({
       where: {

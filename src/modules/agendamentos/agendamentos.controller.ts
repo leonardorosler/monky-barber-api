@@ -6,6 +6,7 @@ import {
   schemaAtualizarStatus,
   schemaHorariosDisponiveis,
 } from './agendamentos.validator'
+import { parseBusinessDateOnly } from '../../shared/utils/date.utils'
 
 export const agendamentosController = {
   // cliente cria agendamento
@@ -26,7 +27,7 @@ export const agendamentosController = {
   // admin lista todos os agendamentos da barbearia
   async listarPorBarbearia(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = req.query.data ? new Date(req.query.data as string) : undefined
+      const data = req.query.data ? parseBusinessDateOnly(req.query.data as string) : undefined
       const status = req.query.status as string | undefined
 
       const agendamentos = await agendamentosService.listarPorBarbearia(
@@ -52,7 +53,7 @@ export const agendamentosController = {
   // barbeiro lista sua própria agenda
   async listarPorBarbeiro(req: Request, res: Response, next: NextFunction) {
     try {
-      const data = req.query.data ? new Date(req.query.data as string) : undefined
+      const data = req.query.data ? parseBusinessDateOnly(req.query.data as string) : undefined
       const agendamentos = await agendamentosService.listarPorBarbeiro(
         req.usuario!.id,
         req.barbeariaId!,

@@ -3,16 +3,16 @@ import { folgasRepository } from '../folgas/folgas.repository'
 import { bloqueiosRepository } from '../bloqueios/bloqueios.repository'
 import { agendamentosRepository } from './agendamentos.repository'
 import { ErroAplicacao } from '../../shared/middlewares/error.middleware'
+import {
+  businessMinutes,
+  businessWeekday,
+  dateAtBusinessMinutes,
+} from '../../shared/utils/date.utils'
 
 // converte "08:30" em minutos (510)
 function horaParaMinutos(hora: string): number {
   const [h, m] = hora.split(':').map(Number)
   return h * 60 + m
-}
-
-// converte Date em minutos do dia
-function dateParaMinutos(date: Date): number {
-  return date.getHours() * 60 + date.getMinutes()
 }
 
 export async function validarHorarioAgendamento(
@@ -21,7 +21,7 @@ export async function validarHorarioAgendamento(
   fim: Date,
   ignorarAgendamentoId?: string
 ): Promise<void> {
-  const diaSemana = inicio.getDay() // 0 = domingo
+  const diaSemana = businessWeekday(inicio) // 0 = domingo
 
   // 1. verifica disponibilidade no dia da semana
   const disponibilidades = await disponibilidadeRepository.listarPorBarbeiro(barbeiroId)
@@ -31,8 +31,8 @@ export async function validarHorarioAgendamento(
     throw new ErroAplicacao('O barbeiro não trabalha neste dia da semana.', 409)
   }
 
-  const inicioMinutos = dateParaMinutos(inicio)
-  const fimMinutos = dateParaMinutos(fim)
+  const inicioMinutos = businessMinutes(inicio)
+  const fimMinutos = businessMinutes(fim)
   const expedienteInicio = horaParaMinutos(disponibilidade.horaInicio)
   const expedienteFim = horaParaMinutos(disponibilidade.horaFim)
 
@@ -75,7 +75,7 @@ export async function gerarHorariosDisponiveis(
   data: Date,
   duracaoMinutos: number
 ): Promise<string[]> {
-  const diaSemana = data.getDay()
+  const diaSemana = businessWeekday(data)
 
   const disponibilidades = await disponibilidadeRepository.listarPorBarbeiro(barbeiroId)
   const disponibilidade = disponibilidades.find((d) => d.diaSemana === diaSemana)
@@ -95,11 +95,9 @@ export async function gerarHorariosDisponiveis(
   let cursor = expedienteInicio
 
   while (cursor + duracaoMinutos <= expedienteFim) {
-    const inicioSlot = new Date(data)
-    inicioSlot.setHours(Math.floor(cursor / 60), cursor % 60, 0, 0)
+    const inicioSlot = dateAtBusinessMinutes(data, cursor)
 
-    const fimSlot = new Date(inicioSlot)
-    fimSlot.setMinutes(fimSlot.getMinutes() + duracaoMinutos)
+    const fimSlot = new Date(inicioSlot.getTime() + duracaoMinutos * 60_000)
 
     // verifica conflito com agendamentos existentes
     const conflitaAgendamento = agendamentosNoDia.some(

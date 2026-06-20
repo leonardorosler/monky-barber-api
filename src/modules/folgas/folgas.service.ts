@@ -2,6 +2,7 @@ import { folgasRepository } from './folgas.repository'
 import { barbeirosRepository } from '../barbeiros/barbeiros.repository'
 import { ErroAplicacao } from '../../shared/middlewares/error.middleware'
 import type { CriarFolgaDTO } from './folgas.validator'
+import { businessDayRange } from '../../shared/utils/date.utils'
 
 export const folgasService = {
   async criar(barbeiroId: string, barbeariaId: string, dados: CriarFolgaDTO) {
@@ -11,7 +12,7 @@ export const folgasService = {
       throw new ErroAplicacao('Barbeiro não encontrado.', 404)
     }
 
-    if (dados.data < new Date()) {
+    if (businessDayRange(dados.data).fim < new Date()) {
       throw new ErroAplicacao('Não é possível cadastrar folga em data passada.', 400)
     }
 

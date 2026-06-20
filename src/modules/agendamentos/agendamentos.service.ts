@@ -41,8 +41,7 @@ export const agendamentosService = {
     }
 
     // calcula fim com base na duração do serviço
-    const fim = new Date(dados.inicio)
-    fim.setMinutes(fim.getMinutes() + servico.duracao)
+    const fim = new Date(dados.inicio.getTime() + servico.duracao * 60_000)
 
     // valida todas as regras de horário
     await validarHorarioAgendamento(dados.barbeiroId, dados.inicio, fim)
