@@ -188,6 +188,35 @@ export const dashboardRepository = {
     })
   },
 
+  async barbeirosSemDisponibilidade(barbeariaId: string) {
+    return prisma.barbeiro.count({
+      where: {
+        barbeariaId,
+        ativo: true,
+        usuario: { ativo: true },
+        disponibilidades: { none: {} },
+      },
+    })
+  },
+
+  async clientesSemRetorno30Dias(barbeariaId: string) {
+    const limite = new Date()
+    limite.setDate(limite.getDate() - 30)
+
+    return prisma.cliente.count({
+      where: {
+        barbeariaId,
+        usuario: { ativo: true },
+        agendamentos: {
+          none: {
+            status: { notIn: ['CANCELADO', 'NAO_COMPARECEU'] },
+            inicio: { gte: limite },
+          },
+        },
+      },
+    })
+  },
+
   async horariosVagosHoje(barbeariaId: string) {
     const agora = new Date()
     const { inicio, fim } = businessDayRange(agora)
