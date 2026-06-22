@@ -102,15 +102,33 @@ export const dashboardRepository = {
   async receitaMes(barbeariaId: string) {
     const { inicio, fim } = businessMonthRange(new Date())
 
-    const resultado = await prisma.pagamento.aggregate({
+    const pagamentosAprovados = await prisma.pagamento.aggregate({
       where: {
         barbeariaId,
         status: 'APROVADO',
+        agendamentoId: null,
         criadoEm: { gte: inicio, lte: fim },
       },
       _sum: { valor: true },
     })
 
-    return resultado._sum.valor ?? 0
+    const agendamentosConcluidos = await prisma.agendamento.findMany({
+      where: {
+        barbeariaId,
+        status: 'CONCLUIDO',
+        assinaturaId: null,
+        inicio: { gte: inicio, lte: fim },
+      },
+      select: {
+        servico: { select: { preco: true } },
+      },
+    })
+
+    const receitaServicosConcluidos = agendamentosConcluidos.reduce(
+      (total, agendamento) => total + Number(agendamento.servico.preco),
+      0
+    )
+
+    return Number(pagamentosAprovados._sum.valor ?? 0) + receitaServicosConcluidos
   },
 }
