@@ -2,7 +2,12 @@ import { assinaturasRepository } from './assinaturas.repository'
 import { planosRepository } from '../planos/planos.repository'
 import { clientesRepository } from '../clientes/clientes.repository'
 import { ErroAplicacao } from '../../shared/middlewares/error.middleware'
+import { businessMonthRange } from '../../shared/utils/date.utils'
 import type { CriarAssinaturaDTO, AtribuirAssinaturaDTO, AtualizarStatusAssinaturaDTO } from './assinaturas.validator'
+
+function periodoMensalAtual() {
+  return businessMonthRange(new Date())
+}
 
 export const assinaturasService = {
   async criar(barbeariaId: string, usuarioId: string, dados: CriarAssinaturaDTO) {
@@ -76,7 +81,6 @@ export const assinaturasService = {
     return assinaturasRepository.listarPorCliente(cliente.id)
   },
 
-
   async utilizacaoPorClienteId(clienteId: string) {
     const assinatura = await assinaturasRepository.assinaturaAtivaPorCliente(clienteId)
     if (!assinatura) return null
@@ -129,11 +133,12 @@ export const assinaturasService = {
   async utilizacao(usuarioId: string) {
     const cliente = await clientesRepository.buscarPorUsuarioId(usuarioId)
     if (!cliente) {
-      throw new ErroAplicacao('Perfil de cliente nÃ£o encontrado.', 404)
+      throw new ErroAplicacao('Perfil de cliente não encontrado.', 404)
     }
 
     return assinaturasService.utilizacaoPorClienteId(cliente.id)
   },
+
   async buscarPorId(id: string) {
     const assinatura = await assinaturasRepository.buscarPorId(id)
     if (!assinatura) {

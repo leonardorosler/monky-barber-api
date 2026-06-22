@@ -13,13 +13,11 @@ import type {
 
 export const agendamentosService = {
   async criar(barbeariaId: string, usuarioId: string, dados: CriarAgendamentoDTO) {
-    // busca o cliente pelo usuarioId
     const cliente = await clientesRepository.buscarPorUsuarioId(usuarioId)
     if (!cliente) {
       throw new ErroAplicacao('Perfil de cliente não encontrado.', 404)
     }
 
-    // valida barbeiro
     const barbeiro = await barbeirosRepository.buscarPorId(dados.barbeiroId, barbeariaId)
     if (!barbeiro) {
       throw new ErroAplicacao('Barbeiro não encontrado.', 404)
@@ -28,7 +26,6 @@ export const agendamentosService = {
       throw new ErroAplicacao('Barbeiro inativo.', 409)
     }
 
-    // valida serviço
     const servico = await servicosRepository.buscarPorId(dados.servicoId, barbeariaId)
     if (!servico) {
       throw new ErroAplicacao('Serviço não encontrado.', 404)
@@ -41,13 +38,13 @@ export const agendamentosService = {
       throw new ErroAplicacao('Não é possível agendar em horários no passado.', 400)
     }
 
-    // calcula fim com base na duração do serviço
     const fim = new Date(dados.inicio.getTime() + servico.duracao * 60_000)
 
-    // valida todas as regras de horário
     await validarHorarioAgendamento(dados.barbeiroId, dados.inicio, fim)
 
-    const utilizacaoPlano = await assinaturasService.utilizacaoPorClienteId(cliente.id)
+    const utilizacaoPlano = await assinaturasService
+      .utilizacaoPorClienteId(cliente.id)
+      .catch(() => null)
 
     return agendamentosRepository.criar({
       barbeariaId,
@@ -100,7 +97,6 @@ export const agendamentosService = {
   ) {
     const agendamento = await agendamentosService.buscarPorId(id, barbeariaId)
 
-    // cliente só pode cancelar o próprio agendamento
     if (papel === 'CLIENTE') {
       const cliente = await clientesRepository.buscarPorUsuarioId(usuarioId)
       if (!cliente || agendamento.clienteId !== cliente.id) {
@@ -111,7 +107,6 @@ export const agendamentosService = {
       }
     }
 
-    // não permite alterar agendamentos já concluídos ou cancelados
     if (['CONCLUIDO', 'CANCELADO'].includes(agendamento.status)) {
       throw new ErroAplicacao(
         `Não é possível alterar um agendamento com status ${agendamento.status}.`,

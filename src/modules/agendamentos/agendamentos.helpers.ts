@@ -9,7 +9,6 @@ import {
   dateAtBusinessMinutes,
 } from '../../shared/utils/date.utils'
 
-// converte "08:30" em minutos (510)
 function horaParaMinutos(hora: string): number {
   const [h, m] = hora.split(':').map(Number)
   return h * 60 + m
@@ -21,9 +20,8 @@ export async function validarHorarioAgendamento(
   fim: Date,
   ignorarAgendamentoId?: string
 ): Promise<void> {
-  const diaSemana = businessWeekday(inicio) // 0 = domingo
+  const diaSemana = businessWeekday(inicio)
 
-  // 1. verifica disponibilidade no dia da semana
   const disponibilidades = await disponibilidadeRepository.listarPorBarbeiro(barbeiroId)
   const disponibilidade = disponibilidades.find((d) => d.diaSemana === diaSemana)
 
@@ -43,21 +41,18 @@ export async function validarHorarioAgendamento(
     )
   }
 
-  // 2. verifica folga no dia
   const temFolga = await folgasRepository.existeNaData(barbeiroId, inicio)
 
   if (temFolga) {
     throw new ErroAplicacao('O barbeiro está de folga neste dia.', 409)
   }
 
-  // 3. verifica bloqueio de horário
   const temBloqueio = await bloqueiosRepository.existeConflito(barbeiroId, inicio, fim)
 
   if (temBloqueio) {
     throw new ErroAplicacao('Este horário está bloqueado pelo barbeiro.', 409)
   }
 
-  // 4. verifica conflito com outro agendamento
   const temConflito = await agendamentosRepository.existeConflito(
     barbeiroId,
     inicio,
@@ -96,20 +91,16 @@ export async function gerarHorariosDisponiveis(
 
   while (cursor + duracaoMinutos <= expedienteFim) {
     const inicioSlot = dateAtBusinessMinutes(data, cursor)
-
     const fimSlot = new Date(inicioSlot.getTime() + duracaoMinutos * 60_000)
 
-    // verifica conflito com agendamentos existentes
     const conflitaAgendamento = agendamentosNoDia.some(
       (a) => a.inicio < fimSlot && a.fim > inicioSlot
     )
 
-    // verifica conflito com bloqueios
     const conflitaBloqueio = bloqueios.some(
       (b) => b.inicio < fimSlot && b.fim > inicioSlot
     )
 
-    // não oferece horários no passado
     const noPassado = inicioSlot < new Date()
 
     if (!conflitaAgendamento && !conflitaBloqueio && !noPassado) {
@@ -118,7 +109,7 @@ export async function gerarHorariosDisponiveis(
       horarios.push(`${hh}:${mm}`)
     }
 
-    cursor += 30 // incremento de 30 em 30 minutos
+    cursor += 30
   }
 
   return horarios
