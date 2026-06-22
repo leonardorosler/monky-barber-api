@@ -72,7 +72,19 @@ export const assinaturasRepository = {
   async assinaturaAtivaPorCliente(clienteId: string) {
     return prisma.assinatura.findFirst({
       where: { clienteId, status: 'ATIVA' },
+      include: { plano: { include: { planosServicos: { include: { servico: true } } } } },
       orderBy: { criadoEm: 'desc' },
+    })
+  },
+
+  async listarAgendamentosDoPlano(clienteId: string, inicio: Date, fim: Date) {
+    return prisma.agendamento.findMany({
+      where: {
+        clienteId,
+        inicio: { gte: inicio, lte: fim },
+        status: { in: ['PENDENTE', 'CONFIRMADO', 'CONCLUIDO'] },
+      },
+      select: { id: true, servicoId: true, status: true, assinaturaId: true },
     })
   },
 }

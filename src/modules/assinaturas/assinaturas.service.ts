@@ -76,6 +76,64 @@ export const assinaturasService = {
     return assinaturasRepository.listarPorCliente(cliente.id)
   },
 
+
+  async utilizacaoPorClienteId(clienteId: string) {
+    const assinatura = await assinaturasRepository.assinaturaAtivaPorCliente(clienteId)
+    if (!assinatura) return null
+
+    const periodo = periodoMensalAtual()
+    const agendamentos = await assinaturasRepository.listarAgendamentosDoPlano(
+      clienteId,
+      periodo.inicio,
+      periodo.fim
+    )
+
+    const servicos = assinatura.plano.planosServicos.map((planoServico) => {
+      const agendamentosDoServico = agendamentos.filter(
+        (agendamento) =>
+          agendamento.servicoId === planoServico.servicoId &&
+          agendamento.assinaturaId === assinatura.id
+      )
+      const usados = agendamentosDoServico.filter((agendamento) => agendamento.status === 'CONCLUIDO').length
+      const reservados = agendamentosDoServico.filter((agendamento) => ['PENDENTE', 'CONFIRMADO'].includes(agendamento.status)).length
+      const consumidos = usados + reservados
+
+      return {
+        assinaturaId: assinatura.id,
+        servicoId: planoServico.servicoId,
+        nome: planoServico.servico.nome,
+        duracao: planoServico.servico.duracao,
+        limite: planoServico.quantidade,
+        usados,
+        reservados,
+        disponiveis: Math.max(planoServico.quantidade - consumidos, 0),
+        cobertoPeloPlano: true,
+      }
+    })
+
+    return {
+      assinaturaId: assinatura.id,
+      plano: {
+        id: assinatura.plano.id,
+        nome: assinatura.plano.nome,
+      },
+      status: assinatura.status,
+      periodo: {
+        inicio: periodo.inicio.toISOString(),
+        fim: periodo.fim.toISOString(),
+      },
+      servicos,
+    }
+  },
+
+  async utilizacao(usuarioId: string) {
+    const cliente = await clientesRepository.buscarPorUsuarioId(usuarioId)
+    if (!cliente) {
+      throw new ErroAplicacao('Perfil de cliente nÃ£o encontrado.', 404)
+    }
+
+    return assinaturasService.utilizacaoPorClienteId(cliente.id)
+  },
   async buscarPorId(id: string) {
     const assinatura = await assinaturasRepository.buscarPorId(id)
     if (!assinatura) {

@@ -208,6 +208,7 @@ model Agendamento {
   clienteId   String            @map("cliente_id")
   barbeiroId  String            @map("barbeiro_id")
   servicoId   String            @map("servico_id")
+  assinaturaId String?           @map("assinatura_id")
   inicio      DateTime
   fim         DateTime
   status      StatusAgendamento @default(PENDENTE)
@@ -220,6 +221,7 @@ model Agendamento {
   cliente   Cliente   @relation(fields: [clienteId], references: [id])
   barbeiro  Barbeiro  @relation(fields: [barbeiroId], references: [id])
   servico   Servico   @relation(fields: [servicoId], references: [id])
+  assinatura Assinatura? @relation(fields: [assinaturaId], references: [id])
   pagamento Pagamento?
 
   @@map("agendamentos")
@@ -290,6 +292,7 @@ model Assinatura {
   cliente    Cliente    @relation(fields: [clienteId], references: [id])
   plano      Plano      @relation(fields: [planoId], references: [id])
   pagamentos Pagamento[]
+  agendamentos Agendamento[]
 
   @@map("assinaturas")
 }

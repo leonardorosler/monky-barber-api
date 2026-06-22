@@ -11,6 +11,7 @@ assinaturasRoutes.use(autenticar)
 // cliente
 assinaturasRoutes.post('/', autorizar('CLIENTE'), assinaturasController.criar)
 assinaturasRoutes.get('/minhas', autorizar('CLIENTE'), assinaturasController.listarPorCliente)
+assinaturasRoutes.get('/minha/utilizacao', autorizar('CLIENTE'), assinaturasController.utilizacao)
 assinaturasRoutes.patch('/:id/cancelar', assinaturasController.cancelar)
 
 // admin

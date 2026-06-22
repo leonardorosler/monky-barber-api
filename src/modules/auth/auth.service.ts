@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import crypto from 'crypto'
 import { authRepository } from './auth.repository'
 import { ErroAplicacao } from '../../shared/middlewares/error.middleware'
+import { enviarEmailRedefinicaoSenha } from '../../shared/services/email.service'
 import type {
   CadastroDTO,
   LoginDTO,
@@ -179,9 +180,15 @@ export const authService = {
       expiracao,
     })
 
-    // TODO: enviar e-mail com o token
-    // Por enquanto loga no console em desenvolvimento
-    console.log(`[DEV] Token de redefinição: ${token}`)
+    try {
+      await enviarEmailRedefinicaoSenha({
+        to: usuario.email,
+        nome: usuario.nome,
+        token,
+      })
+    } catch (error) {
+      console.error('[EMAIL] Falha ao enviar e-mail de redefinicao de senha:', error)
+    }
   },
 
   async redefinirSenha(dados: RedefinirSenhaDTO) {

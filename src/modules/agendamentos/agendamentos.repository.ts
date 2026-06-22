@@ -7,11 +7,20 @@ export const agendamentosRepository = {
     clienteId: string
     barbeiroId: string
     servicoId: string
+    assinaturaId?: string | null
     inicio: Date
     fim: Date
   }) {
     return prisma.agendamento.create({
-      data: dados,
+      data: {
+        barbeariaId: dados.barbeariaId,
+        clienteId: dados.clienteId,
+        barbeiroId: dados.barbeiroId,
+        servicoId: dados.servicoId,
+        assinaturaId: dados.assinaturaId,
+        inicio: dados.inicio,
+        fim: dados.fim,
+      },
       include: {
         barbeiro: { include: { usuario: { select: { nome: true } } } },
         servico: true,

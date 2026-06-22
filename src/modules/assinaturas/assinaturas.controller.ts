@@ -36,6 +36,15 @@ export const assinaturasController = {
     }
   },
 
+
+  async utilizacao(req: Request, res: Response, next: NextFunction) {
+    try {
+      const utilizacao = await assinaturasService.utilizacao(req.usuario!.id)
+      res.json(utilizacao)
+    } catch (err) {
+      next(err)
+    }
+  },
   async atribuir(req: Request, res: Response, next: NextFunction) {
     try {
       const dados = schemaAtribuirAssinatura.parse(req.body)

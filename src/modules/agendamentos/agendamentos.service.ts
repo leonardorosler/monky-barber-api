@@ -2,6 +2,7 @@ import { agendamentosRepository } from './agendamentos.repository'
 import { barbeirosRepository } from '../barbeiros/barbeiros.repository'
 import { servicosRepository } from '../servicos/servicos.repository'
 import { clientesRepository } from '../clientes/clientes.repository'
+import { assinaturasService } from '../assinaturas/assinaturas.service'
 import { validarHorarioAgendamento, gerarHorariosDisponiveis } from './agendamentos.helpers'
 import { ErroAplicacao } from '../../shared/middlewares/error.middleware'
 import type {
@@ -46,11 +47,14 @@ export const agendamentosService = {
     // valida todas as regras de horário
     await validarHorarioAgendamento(dados.barbeiroId, dados.inicio, fim)
 
+    const utilizacaoPlano = await assinaturasService.utilizacaoPorClienteId(cliente.id)
+
     return agendamentosRepository.criar({
       barbeariaId,
       clienteId: cliente.id,
       barbeiroId: dados.barbeiroId,
       servicoId: dados.servicoId,
+      assinaturaId: utilizacaoPlano?.servicos.find((item) => item.servicoId === dados.servicoId && item.disponiveis > 0)?.assinaturaId ?? null,
       inicio: dados.inicio,
       fim,
     })
