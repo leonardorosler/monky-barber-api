@@ -8,6 +8,10 @@ export const dashboardService = {
       clientesAtivos,
       assinaturasAtivas,
       receitaMes,
+      servicosConcluidosMes,
+      clientesRecorrentesMes,
+      agendamentosPendentes,
+      horariosVagosHoje,
       barbeirosRanking,
       servicosRanking,
     ] = await Promise.all([
@@ -16,9 +20,15 @@ export const dashboardService = {
       dashboardRepository.clientesAtivos(barbeariaId),
       dashboardRepository.assinaturasAtivas(barbeariaId),
       dashboardRepository.receitaMes(barbeariaId),
+      dashboardRepository.servicosConcluidosMes(barbeariaId),
+      dashboardRepository.clientesRecorrentesMes(barbeariaId),
+      dashboardRepository.agendamentosPendentes(barbeariaId),
+      dashboardRepository.horariosVagosHoje(barbeariaId),
       dashboardRepository.barbeirosRanking(barbeariaId),
       dashboardRepository.servicosRanking(barbeariaId),
     ])
+
+    const ticketMedio = servicosConcluidosMes > 0 ? receitaMes / servicosConcluidosMes : 0
 
     return {
       agendamentosHoje,
@@ -26,6 +36,11 @@ export const dashboardService = {
       clientesAtivos,
       assinaturasAtivas,
       receitaMes,
+      servicosConcluidosMes,
+      ticketMedio,
+      clientesRecorrentesMes,
+      agendamentosPendentes,
+      horariosVagosHoje,
       barbeirosRanking,
       servicosRanking,
     }
